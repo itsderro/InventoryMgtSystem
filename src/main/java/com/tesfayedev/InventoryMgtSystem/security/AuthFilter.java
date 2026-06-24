@@ -28,9 +28,10 @@ public class AuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+
         String token = getTokenFromRequest(request);
 
-        if(token == null){
+        if(token != null){
             String email = jwtUtils.getUsernameFromToken(token);
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 

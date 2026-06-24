@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Response> handleAllExceptions(Exception ex){
         Response response = Response.builder()
@@ -26,7 +27,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response,HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(Exception.class)
+    // FIXED: Changed from Exception.class to NameValueRequiredException.class
+    @ExceptionHandler(NameValueRequiredException.class)
     public ResponseEntity<Response> handleNameValueRequiredExceptions(NameValueRequiredException ex){
         Response response = Response.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -35,7 +37,8 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(Exception.class)
+    // FIXED: Changed from Exception.class to InvalidCredentialsException.class
+    @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Response> handleInvalidCredentialsExceptions(InvalidCredentialsException ex){
         Response response = Response.builder()
                 .status(HttpStatus.BAD_REQUEST.value())
