@@ -27,7 +27,6 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Response createCategory(CategoryDTO categoryDTO) {
-        log.info("Category is, {}", categoryDTO);
 
         Category categoryToSave = modelMapper.map(categoryDTO, Category.class);
         categoryRepository.save(categoryToSave);
