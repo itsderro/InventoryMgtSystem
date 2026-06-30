@@ -1,5 +1,6 @@
 package com.tesfayedev.InventoryMgtSystem.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.tesfayedev.InventoryMgtSystem.enums.UserRole;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;

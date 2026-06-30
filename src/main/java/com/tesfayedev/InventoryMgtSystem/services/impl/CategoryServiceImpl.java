@@ -41,7 +41,7 @@ public class CategoryServiceImpl implements CategoryService {
         List<Category> categories = categoryRepository.findAll(Sort.by(Sort.Direction.DESC,"id"));
 
         categories.forEach(category -> category.setProducts(null));
-        List<CategoryDTO> categoryDTOList = modelMapper.map(categories, new TypeToken<CategoryDTO>() {}.getType());
+        List<CategoryDTO> categoryDTOList = modelMapper.map(categories, new TypeToken<List<CategoryDTO>>() {}.getType());
 
         return  Response.builder()
                 .status(200)
@@ -69,9 +69,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(()-> new NotFoundException("Category not found"));
 
         existingCategory.setName(categoryDTO.getName());
-
         categoryRepository.save(existingCategory);
-
         return Response.builder()
                 .status(200)
                 .message("Category was successfully updated")
@@ -82,9 +80,7 @@ public class CategoryServiceImpl implements CategoryService {
     public Response deleteCategory(Long id) {
         categoryRepository.findById(id)
                 .orElseThrow(()-> new NotFoundException("Category not found"));
-
         categoryRepository.deleteById(id);
-
         return Response.builder()
                 .status(200)
                 .message("Category was successfully deleted")

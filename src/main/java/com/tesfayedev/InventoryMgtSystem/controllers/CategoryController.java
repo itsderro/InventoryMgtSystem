@@ -1,7 +1,6 @@
 package com.tesfayedev.InventoryMgtSystem.controllers;
 
 import com.tesfayedev.InventoryMgtSystem.dtos.CategoryDTO;
-import com.tesfayedev.InventoryMgtSystem.dtos.RegisterRequest;
 import com.tesfayedev.InventoryMgtSystem.dtos.Response;
 import com.tesfayedev.InventoryMgtSystem.services.CategoryService;
 import jakarta.validation.Valid;
@@ -26,6 +25,7 @@ public class CategoryController {
 
     @GetMapping("/all")
     public ResponseEntity<Response> getAllCategories(){
+
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
