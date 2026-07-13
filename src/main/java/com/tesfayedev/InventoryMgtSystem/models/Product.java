@@ -33,8 +33,17 @@ public class Product {
     @NotNull(message = "Sku is required")
     private String sku;
 
+    @Positive(message = "Cost price must be a positive value")
+    private BigDecimal costPrice;
+
     @Positive(message = "Product price must be a positive value")
-    private BigDecimal price;
+    private BigDecimal wholeSalePrice;
+
+    @Positive(message = "Product price must be a positive value")
+    private BigDecimal retailPrice;
+
+    @Column(name = "wholesale_min_qty")
+    private Integer wholesaleMinQty;
 
     @Min(value=0,message ="Stock quantity cannot be negative")
     private Integer stockQuantity;
@@ -57,12 +66,14 @@ public class Product {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", sku='" + sku + '\'' +
-                ", price=" + price +
+                ", wholeSalePrice=" + wholeSalePrice +
+                ", retailPrice=" + retailPrice +
                 ", stockQuantity=" + stockQuantity +
                 ", description='" + description + '\'' +
                 ", expiryDate=" + expiryDate +
                 ", imageUrl='" + imageUrl + '\'' +
                 ", createdAt=" + createdAt +
+                ", category=" + category +
                 '}';
     }
 }

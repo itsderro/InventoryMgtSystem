@@ -3,6 +3,7 @@ package com.tesfayedev.InventoryMgtSystem.services.impl;
 import com.tesfayedev.InventoryMgtSystem.dtos.Response;
 import com.tesfayedev.InventoryMgtSystem.dtos.TransactionDTO;
 import com.tesfayedev.InventoryMgtSystem.dtos.TransactionRequest;
+import com.tesfayedev.InventoryMgtSystem.enums.PriceType;
 import com.tesfayedev.InventoryMgtSystem.enums.TransactionStatus;
 import com.tesfayedev.InventoryMgtSystem.enums.TransactionType;
 import com.tesfayedev.InventoryMgtSystem.exceptions.NameValueRequiredException;
@@ -17,6 +18,7 @@ import com.tesfayedev.InventoryMgtSystem.repositories.TransactionRepository;
 import com.tesfayedev.InventoryMgtSystem.services.TransactionService;
 import com.tesfayedev.InventoryMgtSystem.services.UserService;
 import com.tesfayedev.InventoryMgtSystem.specifications.TransactionFilter;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -44,13 +46,17 @@ public class TransactionServiceImpl implements TransactionService {
     private final ModelMapper modelMapper;
 
     @Override
+    @Transactional
     public Response purchase(TransactionRequest transactionRequest) {
 
         Long productId = transactionRequest.getProductId();
         Long supplierId = transactionRequest.getSupplierId();
         Integer quantity = transactionRequest.getQuantity();
+        PriceType priceType = transactionRequest.getPriceType();
 
+        if (productId == null) throw new NameValueRequiredException("Product Id is Required");
         if (supplierId == null) throw new NameValueRequiredException("Supplier Id is Required");
+        if (quantity == null || quantity <= 0) throw new NameValueRequiredException("Valid quantity is Required");
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(()-> new NotFoundException("Product not found"));
@@ -68,11 +74,12 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = Transaction.builder()
                 .transactionType(TransactionType.PURCHASE)
                 .transactionStatus(TransactionStatus.COMPLETED)
+                .priceType(priceType)
                 .product(product)
                 .user(user)
                 .supplier(supplier)
                 .totalProducts(quantity)
-                .totalPrice(product.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                .totalPrice(product.getCostPrice().multiply(BigDecimal.valueOf(quantity)))
                 .description(transactionRequest.getDescription())
                 .note(transactionRequest.getNote())
                 .build();
@@ -90,11 +97,20 @@ public class TransactionServiceImpl implements TransactionService {
 
         Long productId = transactionRequest.getProductId();
         Integer quantity = transactionRequest.getQuantity();
+        PriceType priceType = transactionRequest.getPriceType();
+
+        if(priceType == null) throw new NameValueRequiredException("Price type is required (RETAIL or WHOLESALE)");
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(()-> new NotFoundException("Product not found"));
 
         User user = userService.getCurrentLoggedInUser();
+
+        BigDecimal unitPrice = switch (priceType) {
+            case RETAIL -> product.getRetailPrice();
+            case WHOLESALE -> product.getWholeSalePrice();
+            case COST_PRICE -> product.getCostPrice();
+        };
 
         //update the stock quantity and re-save
         product.setStockQuantity(product.getStockQuantity() - quantity);
@@ -104,10 +120,11 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = Transaction.builder()
                 .transactionType(TransactionType.SALE)
                 .transactionStatus(TransactionStatus.COMPLETED)
+                .priceType(priceType)
                 .product(product)
                 .user(user)
                 .totalProducts(quantity)
-                .totalPrice(product.getPrice().multiply(BigDecimal.valueOf(quantity)))
+                .totalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
                 .description(transactionRequest.getDescription())
                 .note(transactionRequest.getNote())
                 .build();

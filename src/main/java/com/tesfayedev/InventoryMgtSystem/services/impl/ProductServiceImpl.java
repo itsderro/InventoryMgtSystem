@@ -39,7 +39,8 @@ public class ProductServiceImpl implements ProductService {
         Product productToSave = Product.builder()
                 .name(productDTO.getName())
                 .sku(productDTO.getSku())
-                .price(productDTO.getPrice())
+                .retailPrice(productDTO.getRetailPrice())
+                .wholeSalePrice(productDTO.getWholeSalePrice())
                 .stockQuantity(productDTO.getStockQuantity())
                 .description(productDTO.getDescription())
                 .category(category)
@@ -90,8 +91,12 @@ public class ProductServiceImpl implements ProductService {
             existingProduct.setDescription(productDTO.getDescription());
         }
 
-        if(productDTO.getPrice() != null && productDTO.getPrice().compareTo(BigDecimal.ZERO) >= 0){
-            existingProduct.setPrice(productDTO.getPrice());
+        if(productDTO.getRetailPrice() != null && productDTO.getRetailPrice().compareTo(BigDecimal.ZERO) >= 0){
+            existingProduct.setRetailPrice(productDTO.getRetailPrice());
+        }
+
+        if(productDTO.getWholeSalePrice() != null && productDTO.getWholeSalePrice().compareTo(BigDecimal.ZERO) >= 0){
+            existingProduct.setWholeSalePrice(productDTO.getWholeSalePrice());
         }
 
         if(productDTO.getStockQuantity() != null && productDTO.getStockQuantity() >= 0){

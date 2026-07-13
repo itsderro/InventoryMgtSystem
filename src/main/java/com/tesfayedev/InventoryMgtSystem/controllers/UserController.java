@@ -2,6 +2,7 @@ package com.tesfayedev.InventoryMgtSystem.controllers;
 
 import com.tesfayedev.InventoryMgtSystem.dtos.Response;
 import com.tesfayedev.InventoryMgtSystem.dtos.UserDTO;
+import com.tesfayedev.InventoryMgtSystem.models.User;
 import com.tesfayedev.InventoryMgtSystem.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -39,5 +40,10 @@ public class UserController {
     @GetMapping("/transactions/{userId}")
     public ResponseEntity<Response> getUserAndTransactions(@PathVariable Long userId){
         return ResponseEntity.ok(userService.getUserTransactions(userId));
+    }
+
+    @GetMapping("/current")
+    public ResponseEntity<User> getCurrentUser(){
+        return ResponseEntity.ok(userService.getCurrentLoggedInUser());
     }
 }

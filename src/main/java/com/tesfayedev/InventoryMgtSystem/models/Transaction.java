@@ -1,5 +1,6 @@
 package com.tesfayedev.InventoryMgtSystem.models;
 
+import com.tesfayedev.InventoryMgtSystem.enums.PriceType;
 import com.tesfayedev.InventoryMgtSystem.enums.TransactionStatus;
 import com.tesfayedev.InventoryMgtSystem.enums.TransactionType;
 import jakarta.persistence.*;
@@ -10,6 +11,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @AllArgsConstructor
@@ -30,9 +33,18 @@ public class Transaction {
     private TransactionType transactionType;
 
     @Enumerated(EnumType.STRING)
+    @Column(name="price_type", nullable = false)
+    private PriceType priceType;
+
+    @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
 
+    private String customerName;
+
     private String description;
+
+    @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL)
+    private List<TransactionItem> items = new ArrayList<>();
 
     private String note;
 
@@ -59,11 +71,17 @@ public class Transaction {
                 ", totalProducts=" + totalProducts +
                 ", totalPrice=" + totalPrice +
                 ", transactionType=" + transactionType +
+                ", priceType=" + priceType +
                 ", transactionStatus=" + transactionStatus +
+                ", customerName='" + customerName + '\'' +
                 ", description='" + description + '\'' +
+                ", items=" + items +
                 ", note='" + note + '\'' +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", product=" + product +
+                ", user=" + user +
+                ", supplier=" + supplier +
                 '}';
     }
 }

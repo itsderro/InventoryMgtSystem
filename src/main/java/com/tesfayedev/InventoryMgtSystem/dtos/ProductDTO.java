@@ -28,7 +28,9 @@ public class ProductDTO {
 
     private String sku;
 
-    private BigDecimal price;
+    private BigDecimal retailPrice;
+
+    private BigDecimal wholeSalePrice;
 
     private Integer stockQuantity;
 

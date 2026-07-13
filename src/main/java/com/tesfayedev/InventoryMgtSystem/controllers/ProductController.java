@@ -24,7 +24,8 @@ public class ProductController {
             @RequestParam("imageFile")MultipartFile imageFile,
             @RequestParam("name")String name,
             @RequestParam("sku")String sku,
-            @RequestParam("price")BigDecimal price,
+            @RequestParam("retailPrice")BigDecimal retailPrice,
+            @RequestParam("wholeSalePrice")BigDecimal wholeSalePrice,
             @RequestParam("stockQuantity")Integer stockQuantity,
             @RequestParam("categoryId")Long categoryId,
             @RequestParam(value = "description",required = false)String description
@@ -32,7 +33,8 @@ public class ProductController {
         ProductDTO productDTO = new ProductDTO();
             productDTO.setName(name);
             productDTO.setSku(sku);
-            productDTO.setPrice(price);
+            productDTO.setRetailPrice(retailPrice);
+            productDTO.setWholeSalePrice(  wholeSalePrice);
             productDTO.setStockQuantity(stockQuantity);
             productDTO.setCategoryId(categoryId);
             productDTO.setDescription(description);
@@ -46,7 +48,8 @@ public class ProductController {
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "sku", required = false) String sku,
-            @RequestParam(value = "price", required = false) BigDecimal price,
+            @RequestParam(value = "retailPrice", required = false) BigDecimal retailPrice,
+            @RequestParam(value = "wholeSalePrice", required = false) BigDecimal wholeSalePrice,
             @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
             @PathVariable("id") Long productId, // CHANGE THIS from @RequestParam to @PathVariable
             @RequestParam(value = "categoryId", required = false) Long categoryId,
@@ -55,7 +58,8 @@ public class ProductController {
         ProductDTO productDTO = new ProductDTO();
         productDTO.setName(name);
         productDTO.setSku(sku);
-        productDTO.setPrice(price);
+        productDTO.setRetailPrice(retailPrice);
+        productDTO.setWholeSalePrice(wholeSalePrice);
         productDTO.setProductId(productId); // This will now correctly use the URL ID
         productDTO.setStockQuantity(stockQuantity);
         productDTO.setCategoryId(categoryId);
