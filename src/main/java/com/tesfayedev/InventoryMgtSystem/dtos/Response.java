@@ -38,6 +38,11 @@ public class Response {
     private ProductDTO product;
     private List<ProductDTO> products;
 
+    private SalaryReportDTO salaryReportDTO;
+
+    private DeliveryPersonnelDTO deliveryPersonnelDTO;
+    private List<DeliveryPersonnelDTO> deliveryPersonnelDTOS;
+
     private TransactionDTO transaction;
     private List<TransactionDTO> transactions;
 

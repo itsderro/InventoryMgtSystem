@@ -41,7 +41,7 @@ public class TransactionDTO {
 
     private ProductDTO product;
 
-    private UserDTO user;
+    private UserSummaryDTO user;
 
     private SupplierDTO supplier;
 

@@ -2,16 +2,16 @@ package com.tesfayedev.InventoryMgtSystem.services.impl;
 
 import com.tesfayedev.InventoryMgtSystem.dtos.Response;
 import com.tesfayedev.InventoryMgtSystem.dtos.TransactionDTO;
+import com.tesfayedev.InventoryMgtSystem.dtos.TransactionItemRequestDTO;
 import com.tesfayedev.InventoryMgtSystem.dtos.TransactionRequest;
+import com.tesfayedev.InventoryMgtSystem.enums.DeliveryStatus;
 import com.tesfayedev.InventoryMgtSystem.enums.PriceType;
 import com.tesfayedev.InventoryMgtSystem.enums.TransactionStatus;
 import com.tesfayedev.InventoryMgtSystem.enums.TransactionType;
 import com.tesfayedev.InventoryMgtSystem.exceptions.NameValueRequiredException;
 import com.tesfayedev.InventoryMgtSystem.exceptions.NotFoundException;
-import com.tesfayedev.InventoryMgtSystem.models.Product;
-import com.tesfayedev.InventoryMgtSystem.models.Supplier;
-import com.tesfayedev.InventoryMgtSystem.models.Transaction;
-import com.tesfayedev.InventoryMgtSystem.models.User;
+import com.tesfayedev.InventoryMgtSystem.models.*;
+import com.tesfayedev.InventoryMgtSystem.repositories.DeliveryPersonnelRepository;
 import com.tesfayedev.InventoryMgtSystem.repositories.ProductRepository;
 import com.tesfayedev.InventoryMgtSystem.repositories.SupplierRepository;
 import com.tesfayedev.InventoryMgtSystem.repositories.TransactionRepository;
@@ -32,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -39,6 +40,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
 
+    private final DeliveryPersonnelRepository deliveryPersonnelRepository;
     private final TransactionRepository transactionRepository;
     private final ProductRepository productRepository;
     private final SupplierRepository supplierRepository;
@@ -49,40 +51,62 @@ public class TransactionServiceImpl implements TransactionService {
     @Transactional
     public Response purchase(TransactionRequest transactionRequest) {
 
-        Long productId = transactionRequest.getProductId();
         Long supplierId = transactionRequest.getSupplierId();
-        Integer quantity = transactionRequest.getQuantity();
         PriceType priceType = transactionRequest.getPriceType();
 
-        if (productId == null) throw new NameValueRequiredException("Product Id is Required");
         if (supplierId == null) throw new NameValueRequiredException("Supplier Id is Required");
-        if (quantity == null || quantity <= 0) throw new NameValueRequiredException("Valid quantity is Required");
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(()-> new NotFoundException("Product not found"));
+        if (transactionRequest.getItems() == null || transactionRequest.getItems().isEmpty())
+            throw new NameValueRequiredException("At least one item is required");
 
         Supplier supplier = supplierRepository.findById(supplierId)
                 .orElseThrow(()-> new NotFoundException("Supplier not found"));
 
         User user = userService.getCurrentLoggedInUser();
 
-        //save the product
-        product.setStockQuantity(product.getStockQuantity()+quantity);
-        productRepository.save(product);
-
         //create a transaction
         Transaction transaction = Transaction.builder()
                 .transactionType(TransactionType.PURCHASE)
                 .transactionStatus(TransactionStatus.COMPLETED)
                 .priceType(priceType)
-                .product(product)
                 .user(user)
                 .supplier(supplier)
-                .totalProducts(quantity)
-                .totalPrice(product.getCostPrice().multiply(BigDecimal.valueOf(quantity)))
                 .description(transactionRequest.getDescription())
                 .note(transactionRequest.getNote())
                 .build();
+
+        List<TransactionItem> items = new ArrayList<>();
+        int totalProducts = 0;
+        BigDecimal totalPrice = BigDecimal.ZERO;
+
+        for (TransactionItemRequestDTO transactionItemRequestDTO : transactionRequest.getItems()){
+            Product product = productRepository.findById(transactionItemRequestDTO.getProductId())
+                    .orElseThrow(()-> new NotFoundException("Product not found: "+ transactionItemRequestDTO.getProductId()));
+
+            Integer quantity = transactionItemRequestDTO.getQuantity();
+
+            product.setStockQuantity(product.getStockQuantity()+quantity);
+            productRepository.save(product);
+
+            BigDecimal unitPrice = product.getCostPrice();
+            BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+
+            items.add(TransactionItem.builder()
+                    .transaction(transaction)
+                    .product(product)
+                    .quantity(quantity)
+                    .unitPrice(unitPrice)
+                    .priceType(priceType)
+                    .subtotal(subtotal)
+                    .build()
+            );
+
+            totalProducts += quantity;
+            totalPrice = totalPrice.add(subtotal);
+        }
+
+        transaction.setItems(items);
+        transaction.setTotalProducts(totalProducts);
+        transaction.setTotalPrice(totalPrice);
 
         transactionRepository.save(transaction);
         return Response.builder()
@@ -93,41 +117,67 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional
     public Response sell(TransactionRequest transactionRequest) {
 
-        Long productId = transactionRequest.getProductId();
-        Integer quantity = transactionRequest.getQuantity();
         PriceType priceType = transactionRequest.getPriceType();
 
         if(priceType == null) throw new NameValueRequiredException("Price type is required (RETAIL or WHOLESALE)");
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(()-> new NotFoundException("Product not found"));
+        if(transactionRequest.getItems()==null||transactionRequest.getItems().isEmpty())
+            throw new NameValueRequiredException("At least one item is required");
 
         User user = userService.getCurrentLoggedInUser();
-
-        BigDecimal unitPrice = switch (priceType) {
-            case RETAIL -> product.getRetailPrice();
-            case WHOLESALE -> product.getWholeSalePrice();
-            case COST_PRICE -> product.getCostPrice();
-        };
-
-        //update the stock quantity and re-save
-        product.setStockQuantity(product.getStockQuantity() - quantity);
-        productRepository.save(product);
 
         //create a transaction
         Transaction transaction = Transaction.builder()
                 .transactionType(TransactionType.SALE)
                 .transactionStatus(TransactionStatus.COMPLETED)
                 .priceType(priceType)
-                .product(product)
                 .user(user)
-                .totalProducts(quantity)
-                .totalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
                 .description(transactionRequest.getDescription())
                 .note(transactionRequest.getNote())
                 .build();
+
+        List<TransactionItem> items = new ArrayList<>();
+        int totalProducts = 0;
+        BigDecimal totalPrice = BigDecimal.ZERO;
+
+        for (TransactionItemRequestDTO itemRequestDTO : transactionRequest.getItems()){
+            Product product = productRepository.findById(itemRequestDTO.getProductId())
+                    .orElseThrow(()-> new NotFoundException("Product not found: "+ itemRequestDTO.getProductId()));
+
+            Integer quantity = itemRequestDTO.getQuantity();
+
+            BigDecimal unitPrice = switch (priceType) {
+                case RETAIL -> product.getRetailPrice();
+                case WHOLESALE -> product.getWholeSalePrice();
+                case COST_PRICE -> product.getCostPrice();
+            };
+
+            product.setStockQuantity(product.getStockQuantity()-quantity);
+            productRepository.save(product);
+
+            BigDecimal subtotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+
+            items.add(TransactionItem.builder()
+                    .transaction(transaction)
+                    .product(product)
+                    .quantity(quantity)
+                    .unitPrice(unitPrice)
+                    .priceType(priceType)
+                    .subtotal(subtotal)
+                    .build()
+            );
+
+            totalProducts += quantity;
+            totalPrice = totalPrice.add(subtotal);
+            transaction.setItems(items);
+            transaction.setTotalProducts(totalProducts);
+            transaction.setTotalPrice(totalPrice);
+
+            transactionRepository.save(transaction);
+        }
+
 
         transactionRepository.save(transaction);
         return Response.builder()
@@ -140,34 +190,53 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Response returnToSupplier(TransactionRequest transactionRequest) {
 
-        Long productId = transactionRequest.getProductId();
         Long supplierId = transactionRequest.getSupplierId();
-        Integer quantity = transactionRequest.getQuantity();
 
         if (supplierId == null) throw new NameValueRequiredException("Supplier Id is Required");
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(()-> new NotFoundException("Product not found"));
+        if (transactionRequest.getItems() == null || transactionRequest.getItems().isEmpty())
+            throw new NameValueRequiredException("At least one item is required");
 
         Supplier supplier = supplierRepository.findById(supplierId)
                 .orElseThrow(()-> new NotFoundException("Supplier not found"));
 
         User user = userService.getCurrentLoggedInUser();
 
-        //save the product
-        product.setStockQuantity(product.getStockQuantity()-quantity);
-        productRepository.save(product);
-
         Transaction transaction = Transaction.builder()
                 .transactionType(TransactionType.RETURN_TO_SUPPLIER)
                 .transactionStatus(TransactionStatus.PROCESSING)
-                .product(product)
                 .user(user)
-                .totalProducts(quantity)
-                .totalPrice(BigDecimal.ZERO)
+                .supplier(supplier)
                 .description(transactionRequest.getDescription())
                 .note(transactionRequest.getNote())
                 .build();
+
+        List<TransactionItem> items = new ArrayList<>();
+        int totalProducts = 0;
+
+        for (TransactionItemRequestDTO itemRequestDTO : transactionRequest.getItems()){
+            Product product = productRepository.findById(itemRequestDTO.getProductId())
+                    .orElseThrow(()-> new NotFoundException("Product not found: "+itemRequestDTO.getProductId()));
+
+            Integer quantity = itemRequestDTO.getQuantity();
+
+            product.setStockQuantity(product.getStockQuantity()-quantity);
+            productRepository.save(product);
+
+            items.add(TransactionItem.builder()
+                    .transaction(transaction)
+                    .product(product)
+                    .quantity(quantity)
+                    .unitPrice(BigDecimal.ZERO)
+                    .subtotal(BigDecimal.ZERO)
+                    .build()
+            );
+
+            totalProducts += quantity;
+        }
+
+        transaction.setItems(items);
+        transaction.setTotalProducts(totalProducts);
+        transaction.setTotalPrice(BigDecimal.ZERO);
 
         transactionRepository.save(transaction);
 
@@ -205,7 +274,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Response getTransactionById(Long id) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(()-> new NotFoundException("Transactin Not FounD"));
+                .orElseThrow(()-> new NotFoundException("Transaction Not Found"));
 
         TransactionDTO transactionDTO = modelMapper.map(transaction, TransactionDTO.class);
 
@@ -253,5 +322,19 @@ public class TransactionServiceImpl implements TransactionService {
                 .message("Transaction has been updated")
                 .build();
 
+    }
+
+    public TransactionDTO markAsDelivered(Long transactionId, Long personnelId){
+        Transaction txn = transactionRepository.findById(transactionId)
+                .orElseThrow(()-> new NotFoundException("Transaction not found"));
+
+        DeliveryPersonnel personnel = deliveryPersonnelRepository.findById(personnelId)
+                .orElseThrow(()-> new NotFoundException("Delivery personnel not found"));
+
+        txn.setDeliveryStatus(DeliveryStatus.DELIVERED);
+        txn.setDeliveryPersonnel(personnel);
+
+        Transaction savedTxn = transactionRepository.save(txn);
+        return modelMapper.map(savedTxn, TransactionDTO.class);
     }
 }

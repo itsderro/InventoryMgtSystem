@@ -44,5 +44,7 @@ public class ProductDTO {
 
     private CategorySummaryDTO category;
 
+    private BigDecimal costPrice;
+
 
 }

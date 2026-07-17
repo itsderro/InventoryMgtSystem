@@ -28,7 +28,7 @@ public class TransactionFilter {
             //search within transaction fields
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), searchPattern));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("note")), searchPattern));
-            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("status").as(String.class)), searchPattern));
+            predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("transactionStatus").as(String.class)), searchPattern));
             predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("transactionType").as(String.class)), searchPattern));
 
             //safely join to check the user fields

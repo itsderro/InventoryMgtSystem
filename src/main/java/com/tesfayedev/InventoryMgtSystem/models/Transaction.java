@@ -1,5 +1,6 @@
 package com.tesfayedev.InventoryMgtSystem.models;
 
+import com.tesfayedev.InventoryMgtSystem.enums.DeliveryStatus;
 import com.tesfayedev.InventoryMgtSystem.enums.PriceType;
 import com.tesfayedev.InventoryMgtSystem.enums.TransactionStatus;
 import com.tesfayedev.InventoryMgtSystem.enums.TransactionType;
@@ -41,6 +42,15 @@ public class Transaction {
 
     private String customerName;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="delivery_personnel_id")
+    private DeliveryPersonnel deliveryPersonnel;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_status",nullable = false)
+    private DeliveryStatus deliveryStatus = DeliveryStatus.NOT_APPLICABLE;
+
     private String description;
 
     @OneToMany(mappedBy = "transaction", cascade = CascadeType.ALL)
@@ -64,6 +74,7 @@ public class Transaction {
     @JoinColumn(name="supplier_id")
     private Supplier supplier;
 
+
     @Override
     public String toString() {
         return "Transaction{" +
@@ -74,6 +85,8 @@ public class Transaction {
                 ", priceType=" + priceType +
                 ", transactionStatus=" + transactionStatus +
                 ", customerName='" + customerName + '\'' +
+                ", deliveryPersonnel=" + deliveryPersonnel +
+                ", deliveryStatus=" + deliveryStatus +
                 ", description='" + description + '\'' +
                 ", items=" + items +
                 ", note='" + note + '\'' +

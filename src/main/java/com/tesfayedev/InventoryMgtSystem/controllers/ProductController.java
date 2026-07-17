@@ -28,7 +28,8 @@ public class ProductController {
             @RequestParam("wholeSalePrice")BigDecimal wholeSalePrice,
             @RequestParam("stockQuantity")Integer stockQuantity,
             @RequestParam("categoryId")Long categoryId,
-            @RequestParam(value = "description",required = false)String description
+            @RequestParam(value = "description",required = false)String description,
+            @RequestParam("costPrice")BigDecimal costPrice
             ){
         ProductDTO productDTO = new ProductDTO();
             productDTO.setName(name);
@@ -38,6 +39,7 @@ public class ProductController {
             productDTO.setStockQuantity(stockQuantity);
             productDTO.setCategoryId(categoryId);
             productDTO.setDescription(description);
+            productDTO.setCostPrice(costPrice);
 
         return ResponseEntity.ok(productService.saveProduct(productDTO, imageFile));
     }

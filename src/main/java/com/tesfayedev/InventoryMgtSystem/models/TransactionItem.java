@@ -2,6 +2,8 @@ package com.tesfayedev.InventoryMgtSystem.models;
 
 import com.tesfayedev.InventoryMgtSystem.enums.PriceType;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,6 +13,8 @@ import java.math.BigDecimal;
 @Table(name = "transaction_items")
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TransactionItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
